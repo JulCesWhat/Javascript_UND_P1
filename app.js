@@ -1,52 +1,54 @@
 
     // Create Dino Constructor
     function Dino(newDino) {
-        this.species = newDino.species;
-        this.weight = newDino.weight;
-        this.height = newDino.height;
-        this.diet = newDino.diet;
-        this.where = newDino.where;
-        this.when = newDino.when;
-        this.fact = newDino.fact;
+        this.species = newDino.species || '';
+        this.weight = newDino.weight || 0;
+        this.height = newDino.height || 0;
+        this.diet = newDino.diet || '';
+        this.where = newDino.where || '';
+        this.when = newDino.when || '';
+        this.fact = newDino.fact || '';
+        this.equalHumanDiet = false;
+        this.equalHumanWeight = false;
+        this.equalHumanHeight = false;
     };
 
-    var dinoList = [];
-    var factList = [];
+    let dinoList = [];
+    let factList = [];
 
+    (function getData() {
 
-    // Create Dino Objects
-    fetch('./dino.json')
-        .then((res) => {
-            if (res.ok) {
-                return res.json();
-            } else {
-                throw new Error('HTTP error ' + response.status);
-            }
-        }).then((res) => {
-            this.factList = res.Dinos.map((dino) => (dino.fact));
-            this.dinoList = res.Dinos.map((dino) => {
-                if (dino.species !== 'Pigeon') {
-                    const newFacts = this.factList.filter((fact) => (fact !== dino.fact));
-                    dino.fact = newFacts[Math.floor(Math.random() * (newFacts.length - 1))];
+        // Create Dino Objects
+        fetch('./dino.json')
+            .then((res) => {
+                if (res.ok) {
+                    return res.json();
+                } else {
+                    throw new Error('HTTP error ' + response.status);
                 }
-
-                return new Dino(dino)
+            }).then((res) => {
+                factList = res.Dinos.map((dino) => (dino.fact));
+                dinoList = res.Dinos.map((dino) => {
+                    return new Dino(dino)
+                });
+            }).catch((error) => {
+                // Catch error
             });
-        }).catch((error) => {
-            // Catch error
-        });
+    })();
+
 
 
     // Create Human Object
 
     // Use IIFE to get human data from form
-    var humanData = (function () {
+    const humanData = (function () {
 
-        function getData(form) {
+        function getUserData(form) {
+            const height = (parseInt(form.feet.value) * 12) + parseInt(form.inches.value);
             return new Dino({
                 species: form.name.value,
-                weight: form.weight.value,
-                height: form.feet.value + '' + form.inches.value,
+                weight: parseInt(form.weight.value),
+                height,
                 diet: form.diet.value,
                 where: '',
                 when: '',
@@ -55,29 +57,49 @@
         };
 
         return {
-            getData: getData
+            getUserData: getUserData
         };
     })();
 
 
     // Create Dino Compare Method 1
     // NOTE: Weight in JSON file is in lbs, height in inches. 
-
+    function campareDinoDiet(dino, human) {
+        if (dino.diet === human.diet) {
+            this.equalHumanDiet = true;
+        }
+    };
     
+
     // Create Dino Compare Method 2
     // NOTE: Weight in JSON file is in lbs, height in inches.
+    function campareDinoWeight(dino, human) {
+        if (dino.weight === human.weight) {
+            dino.equalHumanWeight = true;
+        }
+    };
 
     
     // Create Dino Compare Method 3
     // NOTE: Weight in JSON file is in lbs, height in inches.
+    function campareDinoHeight(dino, human) {
+        if (dino.species === human.species) {
+            dino.equalHumanHeight = true;
+        }
+    };
 
 
     function manipulateDOM() {
 
         // Generate Tiles for each Dino in Array
         let innerHtml = '';
-        this.dinoList.forEach((dino) => {
+        dinoList.forEach((dino) => {
             const imgSrc = dino.when ? dino.species : 'human';
+            if (dino.species !== 'Pigeon') {
+                const newFacts = factList.filter((fact) => (fact !== dino.fact));
+                dino.fact = newFacts[Math.floor(Math.random() * (newFacts.length - 1))];
+            }
+
             innerHtml += `<div class="grid-item"><h3>${dino.species}</h3><img src="./images/${imgSrc}.png" /><p>${dino.fact}</p></div>`
         });
 
@@ -88,16 +110,24 @@
         var dino_form = document.getElementById('dino-compare');
         dino_form.parentNode.removeChild(dino_form);
     }
-
+    
+    function processBtnClick(form) {
+        const human = humanData.getUserData(form);
+        dinoList.forEach((dino) => {
+            this.campareDinoDiet(dino, human);
+            this.campareDinoWeight(dino, human);
+            this.campareDinoHeight(dino, human);
+        });
+        dinoList.splice(4, 0, human);
+        this.manipulateDOM();
+    }
 
     // On button click, prepare and display infographic
     let form = document.getElementById("dino-compare");
     let btn = document.getElementById("btn");
     btn.addEventListener("click", () => {
         if (form.name.value && form.feet.value && form.inches.value&& form.weight.value && form.diet.value) {
-            const capi = this.humanData.getData(form);
-            this.dinoList.splice(4, 0, capi);
-            this.manipulateDOM();
+            this.processBtnClick(form);
         } else {
             console.log('invalid');
         }
